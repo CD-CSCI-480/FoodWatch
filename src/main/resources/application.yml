@@ -11,6 +11,7 @@ security:
     secure: true
     domain: ${DOMAIN}
     path: /
+
   allow-credentials: true
   allowed-origins:
     - https://${DOMAIN}
@@ -43,3 +44,4 @@ security:
     - /info/**
   exposed-headers:
     - X-Xsrf-Token
+
