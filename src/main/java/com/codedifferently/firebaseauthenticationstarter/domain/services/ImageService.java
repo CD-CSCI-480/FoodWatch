@@ -1,40 +1,32 @@
 package com.codedifferently.firebaseauthenticationstarter.domain.services;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import com.codedifferently.firebaseauthenticationstarter.domain.controllers.UserController;
+import marvin.image.MarvinImage;
+import org.marvinproject.image.transform.scale.Scale;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 @Service
 public class ImageService {
     public ImageService() {
     }
+    private static Logger logger = LoggerFactory.getLogger(UserController.class);
 
     public void saveImage(MultipartFile imageFile) throws IOException {
         String folder = "/foodWatchImages";
@@ -43,33 +35,18 @@ public class ImageService {
         Files.write(path, bytes);
     }
 
-    public MultipartFile resizeImage(MultipartFile file) throws IOException, InterruptedException {
-        BufferedImage image= ImageIO.read(file.getInputStream());
-        if(image.getWidth() < 544 && image.getHeight() <544){
-            return file;
-        }
-       // image.get
-//        HttpRequest request = HttpRequest.newBuilder()
-//                .uri(URI.create("https://image-processing4.p.rapidapi.com/imageresize&width=544&height=544"))
-//                .header("X-RapidAPI-Host", "image-processing4.p.rapidapi.com")
-//                .header("X-RapidAPI-Key", "e44382f4c7msh9dcfe7b3513e5dep176903jsnbeec4a500a26")
-//                .header("Content-Type", "multipart/form-data")
-//                .method("GET", HttpRequest.BodyPublishers.)
-//                .build();
-//        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+    public BufferedImage scaleDown(BufferedImage sourceImage, int targetWidth, int targetHeight) {
 
-//        MultiValueMap<String, Object> parameters = new LinkedMultiValueMap();
-//        parameters.add("file", new FileSystemResource(this.multipartToFile(file, file.getName())));
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.set("Content-Type", "multipart/form-data");
-//        headers.set("X-RapidAPI-Key", "e44382f4c7msh9dcfe7b3513e5dep176903jsnbeec4a500a26");
-//        new HashMap();
-//        Map<String, Object> FeedBackStatus = (Map)(new RestTemplate()).exchange("https://image-processing4.p.rapidapi.com/imageresize&width=544&height=544", HttpMethod.GET, new HttpEntity(parameters, headers), Map.class);
-//        System.out.println(ResponseEntity.ok(FeedBackStatus));
-
-        return  file;
-
+        int sourceWidth  = sourceImage.getWidth();
+        int sourceHeight = sourceImage.getHeight();
+        BufferedImage targetImage = new BufferedImage(targetWidth, targetHeight, sourceImage.getType());
+        Graphics2D g = targetImage.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.drawImage(sourceImage, 0, 0, targetWidth, targetHeight, 0, 0, sourceWidth, sourceHeight, null);
+        g.dispose();
+        return targetImage;
     }
+
     public File multipartToFile(MultipartFile multipart, String fileName) throws IllegalStateException, IOException {
         String var10002 = System.getProperty("java.io.tmpdir");
         File convFile = new File(var10002 + "/" + fileName);
@@ -77,19 +54,34 @@ public class ImageService {
         return convFile;
     }
 
-    public MultipartFile convertImage(MultipartFile file) throws IOException, InterruptedException {
-        if(Objects.equals(file.getOriginalFilename().split("\\.")[1], "jpeg")){
-            return file;
-        }
+    public BufferedImage convertImage(BufferedImage image,String fileType) throws IOException{
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://image-processing4.p.rapidapi.com/imageconvert?imageUrl=https%3A%2F%2Fcodingforum.site%2Fimg%2Flogo.png&outputType=jpeg"))
-                .header("X-RapidAPI-Host", "image-processing4.p.rapidapi.com")
-                .header("X-RapidAPI-Key", "798cf2bea4mshc19ae4bf2271c7ep1c6e1fjsnc8ca26eb6956")
-                .method("GET", HttpRequest.BodyPublishers.noBody())
-                .build();
-        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-        System.out.println(response.body());
+        if(Objects.equals(fileType,"jpeg")){
+            return image;
+  }
+
+        final BufferedImage convertedImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
+            convertedImage.createGraphics().drawImage(image, 0, 0, Color.WHITE, null);
+
+            final FileOutputStream fileOutputStream = new FileOutputStream("dice-test.jpeg");
+            final boolean canWrite = ImageIO.write(convertedImage, "jpeg", fileOutputStream);
+            fileOutputStream.close(); // ImageIO.write does not close the output stream
+            if (!canWrite) {
+                throw new IllegalStateException("Failed to write image.");
+            }
+        logger.info("file size = {} x {}, type = {}",image.getWidth(), image.getHeight(), fileType);
+
+        return  convertedImage ;
+    }
+    public MultipartFile imageToFile(BufferedImage image) throws IOException {
+        //ByteArrayOutputStream
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        //BufferedImage ByteArrayOutputStream
+        ImageIO.write(image, "jpeg", os);
+        //ByteArrayOutputStream InputStream
+        InputStream input = new ByteArrayInputStream(os.toByteArray());
+        //InputStream MultipartFile
+        MultipartFile file =new MockMultipartFile("file", "file.jpeg", "text/plain", input);
         return file;
     }
     private byte[] downloadPicture(String url){

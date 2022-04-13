@@ -1,5 +1,6 @@
 package com.codedifferently.firebaseauthenticationstarter.domain.controllers;
 
+import com.codedifferently.firebaseauthenticationstarter.domain.exception.WrongImageType;
 import com.codedifferently.firebaseauthenticationstarter.domain.services.ImageService;
 
 import java.awt.image.BufferedImage;
@@ -57,13 +58,18 @@ public class ApiController {
     )
     public ResponseEntity<Map<String, Object>> getCalories(@RequestParam("file") MultipartFile file) throws IOException, InterruptedException {
         //file = imageController.resizeImage(file);
-        String fileType = file.getOriginalFilename().split("\\.")[1];
-        file = imageService.resizeImage(file);
-        file = imageService.convertImage(file);
-        BufferedImage image= ImageIO.read(file.getInputStream());
-        logger.info("file size = {} x {}, type = {}",image.getWidth(), image.getHeight(), fileType
-        );
+        BufferedImage image = ImageIO.read(file.getInputStream());
+        file.getName();
+        try{
+            logger.info("file size = {} x {}, type = ",image.getWidth(), image.getHeight());
 
+        }catch (Exception e){
+            throw new WrongImageType();
+        }
+        System.out.println("the    thhhh");
+        image = imageService.scaleDown(image,544,544);
+        String fileType = file.getOriginalFilename().split("\\.")[1];
+        file = imageService.imageToFile(imageService.convertImage(image,fileType));
 
         byte[] bytes = file.getBytes();
         BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(new File("/Users/pmmbabittebit19@students.desu.edu/FoodWatch/imgs/foodd.jpeg")));
