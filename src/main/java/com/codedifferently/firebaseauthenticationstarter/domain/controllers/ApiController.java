@@ -45,6 +45,7 @@ public class ApiController {
     }
 
 
+
     /**
      * post image to Calorie Mama Api and retrieve it's data
      * @param file
@@ -66,7 +67,6 @@ public class ApiController {
         }catch (Exception e){
             throw new WrongImageType();
         }
-        System.out.println("the    thhhh");
         image = imageService.scaleDown(image,544,544);
         String fileType = file.getOriginalFilename().split("\\.")[1];
         file = imageService.imageToFile(imageService.convertImage(image,fileType));

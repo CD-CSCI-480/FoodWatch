@@ -1,7 +1,11 @@
 package com.codedifferently.firebaseauthenticationstarter.security.models;
 
+import org.springframework.stereotype.Component;
+
+import javax.persistence.Entity;
 public class FireBaseUser {
     private static final long serialVersionUID = 4408418647685225829L;
+
     private String uid;
     private String name;
     private String email;

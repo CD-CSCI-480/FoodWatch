@@ -50,5 +50,6 @@ public class FirebaseConfig {
             e.printStackTrace();
         }
     }
+
 }
 
